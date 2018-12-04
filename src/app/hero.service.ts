@@ -32,6 +32,20 @@ export class HeroService {
       catchError(this.handleError('getHeroes', []))
     );
   }
+  /** GET hero by id. Return `undefined` when id not found */
+  getHeroNo404<Data>(id: number): Observable<Hero> {
+    const url = `${this.heroesUrl}/?id=${id}`;
+    return this.http.get<Hero[]>(url)
+      .pipe(
+        map(heroes => heroes[0]), // returns a {0|1} element array
+        tap(h => {
+          const outcome = h ? `fetched` : `did not find`;
+          this.log(`${outcome} hero id=${id}`);
+        }),
+        catchError(this.handleError<Hero>(`getHero id=${id}`))
+      );
+  }
+  /** */
   getHero(id: number): Observable<Hero> {
     const url = `${this.heroesUrl}/${id}`;
     this.messageService.add(`HeroService: fetched hero id=${id}`);
@@ -55,6 +69,25 @@ export class HeroService {
     .pipe(
       tap(_ => this.log(`added hero w/ id=${hero.id}`)),
       catchError(this.handleError<Hero>('addHero'))
+    );
+  }
+
+  deleteHero(hero: Hero | number): Observable<Hero> {
+    const id = typeof hero === 'number' ? hero : hero.id;
+    const url = `${this.heroesUrl}/${id}`;
+    return this.http.delete<Hero>(url, httpOptions).pipe(
+      tap(_ => this.log(`delete hero id = ${id}`)),
+      catchError(this.handleError<Hero>('delete hero'))
+    );
+  }
+  searchHero(term: string): Observable<Hero[]> {
+    if (!term.trim()) {
+      of([] );
+    }
+    const url = `${this.heroesUrl}/?name=${term}`;
+    return this.http.get<Hero[]>(url, httpOptions).pipe(
+      tap(_ => this.log(`search Hero name =${term}`)),
+      catchError(this.handleError<Hero[]>('searchHero', [] ))
     );
   }
   /**
